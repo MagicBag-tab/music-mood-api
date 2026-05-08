@@ -14,10 +14,6 @@ type SongRepository interface {
 	Delete(id int) error
 }
 
-type ArtistRepository interface {
-	GetByID(id int) (*models.Artist, error)
-}
-
 type SongService struct {
 	songrepo   SongRepository
 	artistrepo ArtistRepository

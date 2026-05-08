@@ -7,5 +7,5 @@ type Genre struct {
 
 type GenreRequest struct {
 	ID   int    `json:"id,omitempty"`
-	Name string `json:"name" binding:"required"`
+	Name string `json:"name"`
 }

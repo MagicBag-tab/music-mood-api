@@ -12,8 +12,8 @@ type Album struct {
 
 type AlbumRequest struct {
 	ID          int    `json:"id,omitempty"`
-	ArtistID    int    `json:"artist_id" binding:"required"`
-	Title       string `json:"title" binding:"required"`
+	ArtistID    int    `json:"artist_id"`
+	Title       string `json:"title"`
 	Songs       []int  `json:"songs,omitempty"`
 	ReleaseDate string `json:"release_date,omitempty"`
 	CoverPath   string `json:"cover_path,omitempty"`
