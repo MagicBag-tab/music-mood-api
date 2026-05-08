@@ -67,3 +67,65 @@ func (r *SongRepository) Create(song models.SongRequest) (*models.Song, error) {
 
 	return &s, nil
 }
+
+func (r *SongRepository) GetByID(id int) (*models.Song, error) {
+	var s models.Song
+	err := r.db.QueryRow(`
+		SELECT id, artist_id, album_id, title, mood, source,
+		       spotify_id, image_path, created_at, updated_at
+		FROM songs WHERE id = $1`, id,
+	).Scan(
+		&s.ID, &s.ArtistID, &s.AlbumID, &s.Title,
+		&s.Mood, &s.Source, &s.SpotifyID,
+		&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *SongRepository) Update(id int, req models.SongRequest) (*models.Song, error) {
+	var s models.Song
+	err := r.db.QueryRow(`
+		UPDATE songs SET
+			artist_id  = $1,
+			album_id   = $2,
+			title      = $3,
+			mood       = $4,
+			source     = $5,
+			spotify_id = $6,
+			updated_at = NOW()
+		WHERE id = $7
+		RETURNING id, artist_id, album_id, title, mood, source,
+		          spotify_id, image_path, created_at, updated_at`,
+		req.ArtistID, req.AlbumID, req.Title,
+		req.Mood, req.Source, req.SpotifyID, id,
+	).Scan(
+		&s.ID, &s.ArtistID, &s.AlbumID, &s.Title,
+		&s.Mood, &s.Source, &s.SpotifyID,
+		&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *SongRepository) Delete(id int) error {
+	result, err := r.db.Exec(`DELETE FROM songs WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

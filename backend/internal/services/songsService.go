@@ -8,7 +8,10 @@ import (
 
 type SongRepository interface {
 	GetAll() ([]models.Song, error)
+	GetByID(id int) (*models.Song, error)
 	Create(req models.SongRequest) (*models.Song, error)
+	Update(id int, req models.SongRequest) (*models.Song, error)
+	Delete(id int) error
 }
 
 type ArtistRepository interface {
@@ -28,17 +31,23 @@ func (s *SongService) GetAll() ([]models.Song, error) {
 	return s.songrepo.GetAll()
 }
 
+func (s *SongService) GetByID(id int) (*models.Song, error) {
+	song, err := s.songrepo.GetByID(id)
+	if err != nil {
+		return nil, errors.Internal("error retrieving song")
+	}
+	if song == nil {
+		return nil, errors.NotFound(fmt.Sprintf("song with ID %d not found", id))
+	}
+	return song, nil
+}
+
 func (s *SongService) Create(req models.SongRequest) (*models.Song, error) {
 	if req.Title == "" {
 		return nil, errors.BadRequest("title is required")
 	}
-
-	artist, err := s.artistrepo.GetByID(req.ArtistID)
-	if err != nil {
-		return nil, errors.Internal("error al verificar el artista")
-	}
-	if artist == nil {
-		return nil, errors.NotFound(fmt.Sprintf("el artista con ID %d no existe", req.ArtistID))
+	if req.ArtistID == 0 {
+		return nil, errors.BadRequest("artist_id is required")
 	}
 
 	validMoods := map[string]bool{
@@ -56,5 +65,58 @@ func (s *SongService) Create(req models.SongRequest) (*models.Song, error) {
 		return nil, errors.BadRequest(fmt.Sprintf("invalid source: %s", req.Source))
 	}
 
+	artist, err := s.artistrepo.GetByID(req.ArtistID)
+	if err != nil {
+		return nil, errors.Internal("error verifying artist")
+	}
+	if artist == nil {
+		return nil, errors.NotFound(fmt.Sprintf("artist with ID %d not found", req.ArtistID))
+	}
+
 	return s.songrepo.Create(req)
+}
+
+func (s *SongService) Update(id int, req models.SongRequest) (*models.Song, error) {
+	if req.Title == "" {
+		return nil, errors.BadRequest("title is required")
+	}
+
+	validMoods := map[string]bool{
+		"happy": true, "sad": true, "energetic": true,
+		"calm": true, "angry": true, "relaxed": true,
+	}
+	if !validMoods[req.Mood] {
+		return nil, errors.BadRequest(fmt.Sprintf("invalid mood: %s", req.Mood))
+	}
+
+	existing, err := s.songrepo.GetByID(id)
+	if err != nil {
+		return nil, errors.Internal("error retrieving song")
+	}
+	if existing == nil {
+		return nil, errors.NotFound(fmt.Sprintf("song with ID %d not found", id))
+	}
+
+	if req.ArtistID != 0 {
+		artist, err := s.artistrepo.GetByID(req.ArtistID)
+		if err != nil {
+			return nil, errors.Internal("error verifying artist")
+		}
+		if artist == nil {
+			return nil, errors.NotFound(fmt.Sprintf("artist with ID %d not found", req.ArtistID))
+		}
+	}
+
+	return s.songrepo.Update(id, req)
+}
+
+func (s *SongService) Delete(id int) error {
+	existing, err := s.songrepo.GetByID(id)
+	if err != nil {
+		return errors.Internal("error retrieving song")
+	}
+	if existing == nil {
+		return errors.NotFound(fmt.Sprintf("song with ID %d not found", id))
+	}
+	return s.songrepo.Delete(id)
 }

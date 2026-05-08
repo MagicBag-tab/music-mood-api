@@ -17,6 +17,9 @@ func NewRouter(database *sql.DB) http.Handler {
 
 	mux.HandleFunc("GET /songs", songHandler.GetAll)
 	mux.HandleFunc("POST /songs", songHandler.Create)
+	mux.HandleFunc("GET /songs/{id}", songHandler.GetByID)
+	mux.HandleFunc("PUT /songs/{id}", songHandler.Update)
+	mux.HandleFunc("DELETE /songs/{id}", songHandler.Delete)
 
 	return mux
 }
