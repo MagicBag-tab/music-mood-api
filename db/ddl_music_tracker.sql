@@ -15,7 +15,7 @@ CREATE TABLE artists (
 -- Tabla de álbumes
 CREATE TABLE albums (
     id           SERIAL NOT NULL UNIQUE PRIMARY KEY,
-    artist_id    SERIAL NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    artist_id    INT NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
     title        VARCHAR(255) NOT NULL,
     release_date DATE,
     cover_path   VARCHAR(500),
@@ -25,8 +25,8 @@ CREATE TABLE albums (
 -- Tabla de canciones
 CREATE TABLE songs (
     id          SERIAL NOT NULL UNIQUE PRIMARY KEY,
-    artist_id   SERIAL NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
-    album_id    SERIAL REFERENCES albums(id) ON DELETE SET NULL,
+    artist_id   INT NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    album_id    INT REFERENCES albums(id) ON DELETE SET NULL,
     title       VARCHAR(255) NOT NULL,
     mood        VARCHAR(50) NOT NULL CHECK (mood IN ('happy','sad','energetic','calm','angry','relaxed')),
     source      VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source IN ('manual','spotify')),
@@ -52,7 +52,7 @@ CREATE TABLE song_genres (
 -- Tabla de ratings
 CREATE TABLE ratings (
     id         SERIAL NOT NULL UNIQUE PRIMARY KEY,
-    song_id    SERIAL NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+    song_id    INT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
     score      INT NOT NULL CHECK (score >= 1 AND score <= 5),
     comment    TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

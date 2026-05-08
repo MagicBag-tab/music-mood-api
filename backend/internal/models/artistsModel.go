@@ -10,7 +10,7 @@ type Artist struct {
 
 type ArtistRequest struct {
 	ID        int    `json:"id,omitempty"`
-	Name      string `json:"name"`
+	Name      string `json:"name" binding:"required"`
 	Country   string `json:"country,omitempty"`
 	ImagePath string `json:"image_path,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
