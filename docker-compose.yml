@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: music_user
+      POSTGRES_PASSWORD: music_pass
+      POSTGRES_DB: music_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/ddl_music_tracker.sql:/docker-entrypoint-initdb.d/ddl_music_tracker.sql
+
+backend:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - "8009:8009"
+
+volumes:
+  db_data:
