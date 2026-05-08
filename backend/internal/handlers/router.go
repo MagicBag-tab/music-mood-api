@@ -13,6 +13,7 @@ func NewRouter(database *sql.DB) http.Handler {
 	songrepo := db.NewSongRepository(database)
 	artistrepo := db.NewArtistRepository(database)
 	albumrepo := db.NewAlbumRepository(database)
+	ratingrepo := db.NewRatingRepository(database)
 
 	songService := services.NewSongService(songrepo, artistrepo)
 	songHandler := NewSongHandler(songService)
@@ -20,12 +21,16 @@ func NewRouter(database *sql.DB) http.Handler {
 	artistHandler := NewArtistHandler(artistService)
 	albumService := services.NewAlbumService(albumrepo, artistrepo)
 	albumHandler := NewAlbumHandler(albumService)
+	ratingService := services.NewRatingService(ratingrepo, songrepo)
+	ratingHandler := NewRatingHandler(ratingService)
 
 	mux.HandleFunc("GET /songs", songHandler.GetAll)
 	mux.HandleFunc("POST /songs", songHandler.Create)
 	mux.HandleFunc("GET /songs/{id}", songHandler.GetByID)
 	mux.HandleFunc("PUT /songs/{id}", songHandler.Update)
 	mux.HandleFunc("DELETE /songs/{id}", songHandler.Delete)
+	mux.HandleFunc("POST /songs/{id}/rating", ratingHandler.Create)
+	mux.HandleFunc("GET /songs/{id}/rating", ratingHandler.GetBySongID)
 
 	mux.HandleFunc("GET /artists", artistHandler.GetAll)
 	mux.HandleFunc("POST /artists", artistHandler.Create)
