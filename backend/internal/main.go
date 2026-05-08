@@ -23,7 +23,7 @@ func main() {
 	}
 	defer db.Close()
 
-	fmt.Println("connected to database ✅")
+	fmt.Println("connected to database")
 
 	router := handlers.NewRouter(db)
 
@@ -32,6 +32,6 @@ func main() {
 		port = "8009"
 	}
 
-	log.Printf("server running on port %s 🎵", port)
+	log.Printf("server running on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
