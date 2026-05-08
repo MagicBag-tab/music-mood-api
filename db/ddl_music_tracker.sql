@@ -44,10 +44,8 @@ CREATE TABLE genres (
 
 -- Tabla de canciones y géneros
 CREATE TABLE song_genres (
-    song_id  SERIAL NOT NULL PRIMARY KEY,
-    genre_id SERIAL NOT NULL PRIMARY KEY REFERENCES genres(id) ON DELETE CASCADE,
-    song_id  SERIAL NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
-    genre_id SERIAL NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
+    song_id  INT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+    genre_id INT NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
     PRIMARY KEY (song_id, genre_id)
 );
 
