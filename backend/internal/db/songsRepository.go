@@ -43,3 +43,27 @@ func (r *SongRepository) GetAll() ([]models.Song, error) {
 
 	return songs, nil
 }
+
+func (r *SongRepository) Create(song models.SongRequest) (*models.Song, error) {
+	query := `
+		INSERT INTO songs (artist_id, album_id, title, mood, source, spotify_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, artist_id, album_id, title, mood, source, 
+		          spotify_id, image_path, created_at, updated_at
+	`
+
+	var s models.Song
+	err := r.db.QueryRow(query,
+		song.ArtistID, song.AlbumID, song.Title,
+		song.Mood, song.Source, song.SpotifyID,
+	).Scan(
+		&s.ID, &s.ArtistID, &s.AlbumID, &s.Title,
+		&s.Mood, &s.Source, &s.SpotifyID,
+		&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}

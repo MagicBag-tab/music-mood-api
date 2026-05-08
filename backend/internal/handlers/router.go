@@ -10,11 +10,13 @@ import (
 func NewRouter(database *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 
-	repo := db.NewSongRepository(database)
-	songService := services.NewSongService(repo)
+	songrepo := db.NewSongRepository(database)
+	artistrepo := db.NewArtistRepository(database)
+	songService := services.NewSongService(songrepo, artistrepo)
 	songHandler := NewSongHandler(songService)
 
 	mux.HandleFunc("GET /songs", songHandler.GetAll)
+	mux.HandleFunc("POST /songs", songHandler.Create)
 
 	return mux
 }
