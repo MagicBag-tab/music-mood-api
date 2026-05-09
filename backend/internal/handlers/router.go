@@ -55,5 +55,11 @@ func NewRouter(database *sql.DB) http.Handler {
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/",
 		http.FileServer(http.Dir("uploads"))))
 
+	mux.HandleFunc("GET /openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "openapi.yaml")
+	})
+
+	mux.HandleFunc("GET /docs", SwaggerUI)
+
 	return middleware.CORS(mux)
 }
