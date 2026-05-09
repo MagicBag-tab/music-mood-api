@@ -6,7 +6,7 @@ API REST para el **Music Mood Tracker**. Escrita en Go puro (`net/http`, sin fra
 
 🌐 **Live demo:** https://music-mood-api-1.onrender.com
 
-📖 **Swagger UI:** 
+📖 **Swagger UI:** https://music-mood-api-1.onrender.com/docs
 
 ---
 
