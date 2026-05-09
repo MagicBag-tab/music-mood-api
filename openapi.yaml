@@ -2,34 +2,68 @@ openapi: 3.0.0
 info:
   title: Music Mood API
   version: 1.0.0
-  description: API para gestionar canciones basadas en estados de ánimo.
+  description: |
+    API REST para gestionar canciones basadas en estados de ánimo (moods).
+    Permite crear, editar, eliminar y filtrar canciones, gestionar artistas y álbumes,
+    subir imágenes de portada, y registrar ratings por canción.
+
+servers:
+  - url: http://localhost:8009
+    description: Desarrollo local
+
+tags:
+  - name: songs
+    description: Operaciones sobre canciones
+  - name: artists
+    description: Operaciones sobre artistas
+  - name: albums
+    description: Operaciones sobre álbumes
+  - name: ratings
+    description: Ratings de canciones
+  - name: reports
+    description: Reportes y estadísticas
+
 paths:
   /songs:
     get:
-      summary: Obtener todas las canciones con filtros
+      tags: [songs]
+      summary: Listar canciones con filtros, búsqueda y paginación
       parameters:
         - name: page
           in: query
-          schema: { type: integer, default: 1 }
+          description: Número de página (base 1)
+          schema: { type: integer, default: 1, minimum: 1 }
         - name: limit
           in: query
-          schema: { type: integer, default: 10 }
+          description: Resultados por página
+          schema: { type: integer, default: 10, minimum: 1, maximum: 100 }
         - name: q
           in: query
-          description: Búsqueda por título o artista
+          description: Búsqueda por título o nombre de artista
           schema: { type: string }
         - name: mood
           in: query
-          schema: { type: string, enum: [happy, sad, energetic, calm, angry, relaxed] }
+          description: Filtrar por estado de ánimo
+          schema:
+            type: string
+            enum: [happy, sad, energetic, calm, angry, relaxed]
         - name: sort
           in: query
-          schema: { type: string, enum: [title, created_at, mood] }
+          description: Campo por el cual ordenar
+          schema:
+            type: string
+            enum: [title, created_at, mood]
+            default: created_at
         - name: order
           in: query
-          schema: { type: string, enum: [asc, desc] }
+          description: Dirección del ordenamiento
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         '200':
-          description: Lista de canciones paginada
+          description: Lista paginada de canciones
           content:
             application/json:
               schema:
@@ -38,25 +72,517 @@ paths:
                   data:
                     type: array
                     items: { $ref: '#/components/schemas/Song' }
-                  total: { type: integer }
-  /songs/upload:
+                  total:
+                    type: integer
+                    example: 42
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+
     post:
-      summary: Subir una imagen
+      tags: [songs]
+      summary: Crear una canción nueva
       requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SongRequest' }
+      responses:
+        '201':
+          description: Canción creada exitosamente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Song' }
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /songs/{id}:
+    get:
+      tags: [songs]
+      summary: Obtener una canción por ID
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '200':
+          description: Canción encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Song' }
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    put:
+      tags: [songs]
+      summary: Actualizar una canción existente
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SongRequest' }
+      responses:
+        '200':
+          description: Canción actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Song' }
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    delete:
+      tags: [songs]
+      summary: Eliminar una canción
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '204':
+          description: Canción eliminada (sin cuerpo)
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /songs/{id}/image:
+    post:
+      tags: [songs]
+      summary: Subir imagen de portada para una canción
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required: [image]
               properties:
-                image: { type: string, format: binary }
+                image:
+                  type: string
+                  format: binary
+                  description: Archivo de imagen (jpg, jpeg, png, webp — máx 1MB)
       responses:
         '200':
-          description: Ruta del archivo subido
+          description: Imagen subida y ruta guardada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image_path:
+                    type: string
+                    example: /uploads/song_1_1717000000.jpg
+        '400':
+          description: Archivo inválido o muy grande
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /songs/{id}/rating:
+    get:
+      tags: [ratings]
+      summary: Obtener todos los ratings de una canción con promedio
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '200':
+          description: Resumen de ratings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ratings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Rating' }
+                  average:
+                    type: number
+                    format: float
+                    example: 4.2
+                  total:
+                    type: integer
+                    example: 5
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    post:
+      tags: [ratings]
+      summary: Registrar un rating para una canción
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RatingRequest' }
+      responses:
+        '201':
+          description: Rating registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Score fuera de rango (debe ser 1–5)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Canción no encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /artists:
+    get:
+      tags: [artists]
+      summary: Listar todos los artistas
+      responses:
+        '200':
+          description: Lista de artistas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Artist' }
+
+    post:
+      tags: [artists]
+      summary: Crear un artista
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ArtistRequest' }
+      responses:
+        '201':
+          description: Artista creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Artist' }
+        '400':
+          description: Nombre requerido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /artists/{id}:
+    get:
+      tags: [artists]
+      summary: Obtener un artista por ID
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '200':
+          description: Artista encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Artist' }
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    put:
+      tags: [artists]
+      summary: Actualizar un artista
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ArtistRequest' }
+      responses:
+        '200':
+          description: Artista actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Artist' }
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    delete:
+      tags: [artists]
+      summary: Eliminar un artista
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '204':
+          description: Artista eliminado
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /albums:
+    get:
+      tags: [albums]
+      summary: Listar todos los álbumes
+      responses:
+        '200':
+          description: Lista de álbumes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Album' }
+
+    post:
+      tags: [albums]
+      summary: Crear un álbum
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AlbumRequest' }
+      responses:
+        '201':
+          description: Álbum creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Album' }
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /albums/{id}:
+    get:
+      tags: [albums]
+      summary: Obtener un álbum por ID
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '200':
+          description: Álbum encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Album' }
+        '404':
+          description: Álbum no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    put:
+      tags: [albums]
+      summary: Actualizar un álbum
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AlbumRequest' }
+      responses:
+        '200':
+          description: Álbum actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Album' }
+        '404':
+          description: Álbum no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    delete:
+      tags: [albums]
+      summary: Eliminar un álbum
+      parameters:
+        - { $ref: '#/components/parameters/IDParam' }
+      responses:
+        '204':
+          description: Álbum eliminado
+        '404':
+          description: Álbum no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /reports/moods:
+    get:
+      tags: [reports]
+      summary: Distribución de canciones por mood
+      responses:
+        '200':
+          description: Array con conteo por mood
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    mood: { type: string, example: sad }
+                    count: { type: integer, example: 7 }
+
+  /reports/top-rated:
+    get:
+      tags: [reports]
+      summary: Canciones con mejor rating promedio
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 5 }
+      responses:
+        '200':
+          description: Lista de top canciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    song_id: { type: integer }
+                    title: { type: string }
+                    artist_name: { type: string }
+                    average_rating: { type: number, format: float }
+                    ratings_count: { type: integer }
+
 components:
+  parameters:
+    IDParam:
+      name: id
+      in: path
+      required: true
+      description: ID numérico del recurso
+      schema: { type: integer, minimum: 1 }
+
   schemas:
     Song:
       type: object
       properties:
+        id: { type: integer, example: 1 }
+        artist_id: { type: integer, example: 1 }
+        artist_name: { type: string, example: Taylor Swift }
+        album_id: { type: integer, nullable: true, example: 2 }
+        title: { type: string, example: cardigan }
+        mood:
+          type: string
+          enum: [happy, sad, energetic, calm, angry, relaxed]
+          example: sad
+        source:
+          type: string
+          enum: [manual, spotify]
+          example: spotify
+        spotify_id: { type: string, example: 4R2kfaDFgnULkiCo3gahGb }
+        image_path: { type: string, example: /uploads/song_1_1717000000.jpg }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    SongRequest:
+      type: object
+      required: [title, artist_id, mood, source]
+      properties:
+        title: { type: string, example: cardigan }
+        artist_id: { type: integer, example: 1 }
+        album_id: { type: integer, nullable: true, example: 1 }
+        mood:
+          type: string
+          enum: [happy, sad, energetic, calm, angry, relaxed]
+        source:
+          type: string
+          enum: [manual, spotify]
+          default: manual
+        spotify_id: { type: string }
+
+    Artist:
+      type: object
+      properties:
         id: { type: integer }
+        name: { type: string, example: Taylor Swift }
+        country: { type: string, example: United States }
+        image_path: { type: string }
+        created_at: { type: string, format: date-time }
+
+    ArtistRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        country: { type: string }
+        image_path: { type: string }
+
+    Album:
+      type: object
+      properties:
+        id: { type: integer }
+        artist_id: { type: integer }
+        title: { type: string, example: folklore }
+        release_date: { type: string, format: date, example: '2020-07-24' }
+        cover_path: { type: string }
+        created_at: { type: string, format: date-time }
+
+    AlbumRequest:
+      type: object
+      required: [title, artist_id]
+      properties:
+        artist_id: { type: integer }
         title: { type: string }
-        mood: { type: string }
+        release_date: { type: string, format: date }
+        cover_path: { type: string }
+
+    Rating:
+      type: object
+      properties:
+        id: { type: integer }
+        song_id: { type: integer }
+        score: { type: integer, minimum: 1, maximum: 5, example: 5 }
+        comment: { type: string, example: Perfect for rainy nights }
+        created_at: { type: string, format: date-time }
+
+    RatingRequest:
+      type: object
+      required: [score]
+      properties:
+        score: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: song not found }
