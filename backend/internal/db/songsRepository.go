@@ -62,7 +62,8 @@ func (r *SongRepository) GetAll(f models.SongFilters) ([]models.Song, int, error
 	args = append(args, f.Limit, offset)
 	query := fmt.Sprintf(`
 		SELECT s.id, s.artist_id, s.album_id, s.title, s.mood, s.source,
-		       s.spotify_id, s.image_path, s.created_at, s.updated_at
+		       s.spotify_id, s.image_path, s.created_at, s.updated_at,
+		       a.name as artist_name
 		FROM songs s
 		JOIN artists a ON s.artist_id = a.id
 		%s
@@ -83,6 +84,7 @@ func (r *SongRepository) GetAll(f models.SongFilters) ([]models.Song, int, error
 			&s.ID, &s.ArtistID, &s.AlbumID, &s.Title,
 			&s.Mood, &s.Source, &s.SpotifyID,
 			&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
+			&s.ArtistName,
 		)
 		if err != nil {
 			return nil, 0, err
