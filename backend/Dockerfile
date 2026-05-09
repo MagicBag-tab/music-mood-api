@@ -14,6 +14,7 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/main .
+COPY OpenAPI.yaml .
 
 EXPOSE 8009
 
