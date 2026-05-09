@@ -1,18 +1,17 @@
 package models
 
+import "time"
+
 type Artist struct {
-	ID        int     `json:"id,omitempty"`
-	Name      string  `json:"name"`
-	Country   string  `json:"country,omitempty"`
-	ImagePath string  `json:"image_path,omitempty"`
-	Albums    []Album `json:"albums,omitempty"`
-	CreatedAt string  `json:"created_at,omitempty"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Country   string    `json:"country"`
+	ImagePath string    `json:"image_path,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type ArtistRequest struct {
-	ID        int    `json:"id,omitempty"`
 	Name      string `json:"name"`
-	Country   string `json:"country,omitempty"`
-	ImagePath string `json:"image_path,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
+	Country   string `json:"country"`
+	ImagePath string `json:"image_path"`
 }

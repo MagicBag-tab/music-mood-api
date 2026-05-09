@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"music-mood-api/internal/db"
+	middleware "music-mood-api/internal/middlewear"
 	"music-mood-api/internal/services"
 	"net/http"
 )
@@ -33,6 +34,7 @@ func NewRouter(database *sql.DB) http.Handler {
 	mux.HandleFunc("PUT /songs/{id}", songHandler.Update)
 	mux.HandleFunc("DELETE /songs/{id}", songHandler.Delete)
 	mux.HandleFunc("POST /songs/{id}/rating", ratingHandler.Create)
+	mux.HandleFunc("POST /songs/{id}/image", songHandler.UploadImage)
 	mux.HandleFunc("GET /songs/{id}/rating", ratingHandler.GetBySongID)
 
 	mux.HandleFunc("GET /artists", artistHandler.GetAll)
@@ -50,5 +52,8 @@ func NewRouter(database *sql.DB) http.Handler {
 	mux.HandleFunc("GET /reports/moods", reportHandler.GetMoodDistribution)
 	mux.HandleFunc("GET /reports/top-rated", reportHandler.GetTopRatedSongs)
 
-	return mux
+	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/",
+		http.FileServer(http.Dir("uploads"))))
+
+	return middleware.CORS(mux)
 }

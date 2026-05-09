@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"music-mood-api/internal/models"
 )
 
@@ -13,17 +14,65 @@ func NewSongRepository(db *sql.DB) *SongRepository {
 	return &SongRepository{db: db}
 }
 
-func (r *SongRepository) GetAll() ([]models.Song, error) {
-	query := `
-		SELECT id, artist_id, album_id, title, mood, source, 
-		       spotify_id, image_path, created_at, updated_at
-		FROM songs
-		ORDER BY created_at DESC
-	`
+func (r *SongRepository) GetAll(f models.SongFilters) ([]models.Song, int, error) {
+	where := "WHERE 1=1"
+	args := []any{}
+	i := 1
 
-	rows, err := r.db.Query(query)
+	if f.Search != "" {
+		where += fmt.Sprintf(" AND (s.title ILIKE $%d OR a.name ILIKE $%d)", i, i+1)
+		args = append(args, "%"+f.Search+"%", "%"+f.Search+"%")
+		i += 2
+	}
+
+	if f.Mood != "" {
+		where += fmt.Sprintf(" AND s.mood = $%d", i)
+		args = append(args, f.Mood)
+		i++
+	}
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*) FROM songs s
+		JOIN artists a ON s.artist_id = a.id
+		%s`, where)
+
+	var total int
+	if err := r.db.QueryRow(countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	validSorts := map[string]bool{"title": true, "created_at": true, "mood": true}
+	sortCol := "s.created_at"
+	if validSorts[f.Sort] {
+		sortCol = "s." + f.Sort
+	}
+	order := "DESC"
+	if f.Order == "asc" {
+		order = "ASC"
+	}
+
+	if f.Limit <= 0 {
+		f.Limit = 10
+	}
+	if f.Page <= 0 {
+		f.Page = 1
+	}
+	offset := (f.Page - 1) * f.Limit
+
+	args = append(args, f.Limit, offset)
+	query := fmt.Sprintf(`
+		SELECT s.id, s.artist_id, s.album_id, s.title, s.mood, s.source,
+		       s.spotify_id, s.image_path, s.created_at, s.updated_at
+		FROM songs s
+		JOIN artists a ON s.artist_id = a.id
+		%s
+		ORDER BY %s %s
+		LIMIT $%d OFFSET $%d`,
+		where, sortCol, order, i, i+1)
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -36,12 +85,15 @@ func (r *SongRepository) GetAll() ([]models.Song, error) {
 			&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		songs = append(songs, s)
 	}
 
-	return songs, nil
+	if songs == nil {
+		songs = []models.Song{}
+	}
+	return songs, total, nil
 }
 
 func (r *SongRepository) Create(song models.SongRequest) (*models.Song, error) {
@@ -128,4 +180,12 @@ func (r *SongRepository) Delete(id int) error {
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+func (r *SongRepository) UpdateImage(id int, imagePath string) error {
+	_, err := r.db.Exec(
+		`UPDATE songs SET image_path = $1, updated_at = NOW() WHERE id = $2`,
+		imagePath, id,
+	)
+	return err
 }

@@ -7,11 +7,12 @@ import (
 )
 
 type SongRepository interface {
-	GetAll() ([]models.Song, error)
+	GetAll(f models.SongFilters) ([]models.Song, int, error)
 	GetByID(id int) (*models.Song, error)
 	Create(req models.SongRequest) (*models.Song, error)
 	Update(id int, req models.SongRequest) (*models.Song, error)
 	Delete(id int) error
+	UpdateImage(id int, imagePath string) error
 }
 
 type SongService struct {
@@ -23,8 +24,8 @@ func NewSongService(songrepo SongRepository, artistrepo ArtistRepository) *SongS
 	return &SongService{songrepo: songrepo, artistrepo: artistrepo}
 }
 
-func (s *SongService) GetAll() ([]models.Song, error) {
-	return s.songrepo.GetAll()
+func (s *SongService) GetAll(f models.SongFilters) ([]models.Song, int, error) {
+	return s.songrepo.GetAll(f)
 }
 
 func (s *SongService) GetByID(id int) (*models.Song, error) {
@@ -115,4 +116,8 @@ func (s *SongService) Delete(id int) error {
 		return errors.NotFound(fmt.Sprintf("song with ID %d not found", id))
 	}
 	return s.songrepo.Delete(id)
+}
+
+func (s *SongService) UpdateImage(id int, imagePath string) error {
+	return s.songrepo.UpdateImage(id, imagePath)
 }

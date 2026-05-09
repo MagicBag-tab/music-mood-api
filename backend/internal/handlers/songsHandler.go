@@ -11,11 +11,12 @@ import (
 )
 
 type SongService interface {
-	GetAll() ([]models.Song, error)
+	GetAll(f models.SongFilters) ([]models.Song, int, error)
 	GetByID(id int) (*models.Song, error)
 	Create(req models.SongRequest) (*models.Song, error)
 	Update(id int, req models.SongRequest) (*models.Song, error)
 	Delete(id int) error
+	UpdateImage(id int, imagePath string) error
 }
 
 type SongHandler struct {
@@ -27,15 +28,32 @@ func NewSongHandler(service SongService) *SongHandler {
 }
 
 func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	songs, err := h.service.GetAll()
+	q := r.URL.Query()
+
+	page, _ := strconv.Atoi(q.Get("page"))
+	limit, _ := strconv.Atoi(q.Get("limit"))
+
+	filters := models.SongFilters{
+		Page:   page,
+		Limit:  limit,
+		Search: q.Get("q"),
+		Sort:   q.Get("sort"),
+		Order:  q.Get("order"),
+		Mood:   q.Get("mood"),
+	}
+
+	songs, total, err := h.service.GetAll(filters)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
-	if songs == nil {
-		songs = []models.Song{}
-	}
-	writeJSON(w, http.StatusOK, songs)
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data":  songs,
+		"total": total,
+		"page":  filters.Page,
+		"limit": filters.Limit,
+	})
 }
 
 func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {

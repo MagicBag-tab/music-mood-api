@@ -1,0 +1,62 @@
+openapi: 3.0.0
+info:
+  title: Music Mood API
+  version: 1.0.0
+  description: API para gestionar canciones basadas en estados de ánimo.
+paths:
+  /songs:
+    get:
+      summary: Obtener todas las canciones con filtros
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: q
+          in: query
+          description: Búsqueda por título o artista
+          schema: { type: string }
+        - name: mood
+          in: query
+          schema: { type: string, enum: [happy, sad, energetic, calm, angry, relaxed] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [title, created_at, mood] }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200':
+          description: Lista de canciones paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Song' }
+                  total: { type: integer }
+  /songs/upload:
+    post:
+      summary: Subir una imagen
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '200':
+          description: Ruta del archivo subido
+components:
+  schemas:
+    Song:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        mood: { type: string }
