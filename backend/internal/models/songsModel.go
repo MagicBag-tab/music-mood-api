@@ -10,8 +10,8 @@ type Song struct {
 	Title      string    `json:"title"`
 	Mood       string    `json:"mood"`
 	Source     string    `json:"source"`
-	SpotifyID  string    `json:"spotify_id,omitempty"`
-	ImagePath  string    `json:"image_path,omitempty"`
+	SpotifyID  *string   `json:"spotify_id,omitempty"`
+	ImagePath  *string   `json:"image_path,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
