@@ -6,6 +6,7 @@ import (
 	"music-mood-api/internal/models"
 	"music-mood-api/pkg/errors"
 	"net/http"
+	"strconv"
 )
 
 type ArtistService interface {
@@ -37,7 +38,7 @@ func (h *ArtistHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArtistHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/artists/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid artist ID")
 		return
@@ -75,7 +76,7 @@ func (h *ArtistHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArtistHandler) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/artists/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid artist ID")
 		return
@@ -100,7 +101,7 @@ func (h *ArtistHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArtistHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/artists/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid artist ID")
 		return

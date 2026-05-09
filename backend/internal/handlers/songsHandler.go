@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"music-mood-api/internal/models"
 	"music-mood-api/pkg/errors"
@@ -27,11 +26,6 @@ func NewSongHandler(service SongService) *SongHandler {
 	return &SongHandler{service: service}
 }
 
-func extractID(r *http.Request, prefix string) (int, error) {
-	path := strings.TrimPrefix(r.URL.Path, prefix)
-	return strconv.Atoi(path)
-}
-
 func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	songs, err := h.service.GetAll()
 	if err != nil {
@@ -45,7 +39,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/songs/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid song ID")
 		return
@@ -83,7 +77,7 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/songs/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid song ID")
 		return
@@ -108,7 +102,7 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SongHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/songs/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid song ID")
 		return

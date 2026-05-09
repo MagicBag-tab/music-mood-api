@@ -14,6 +14,7 @@ func NewRouter(database *sql.DB) http.Handler {
 	artistrepo := db.NewArtistRepository(database)
 	albumrepo := db.NewAlbumRepository(database)
 	ratingrepo := db.NewRatingRepository(database)
+	reportrepo := db.NewReportRepository(database)
 
 	songService := services.NewSongService(songrepo, artistrepo)
 	songHandler := NewSongHandler(songService)
@@ -23,6 +24,8 @@ func NewRouter(database *sql.DB) http.Handler {
 	albumHandler := NewAlbumHandler(albumService)
 	ratingService := services.NewRatingService(ratingrepo, songrepo)
 	ratingHandler := NewRatingHandler(ratingService)
+	reportService := services.NewReportService(reportrepo)
+	reportHandler := NewReportHandler(reportService)
 
 	mux.HandleFunc("GET /songs", songHandler.GetAll)
 	mux.HandleFunc("POST /songs", songHandler.Create)
@@ -43,6 +46,9 @@ func NewRouter(database *sql.DB) http.Handler {
 	mux.HandleFunc("GET /albums/{id}", albumHandler.GetByID)
 	mux.HandleFunc("PUT /albums/{id}", albumHandler.Update)
 	mux.HandleFunc("DELETE /albums/{id}", albumHandler.Delete)
+
+	mux.HandleFunc("GET /reports/moods", reportHandler.GetMoodDistribution)
+	mux.HandleFunc("GET /reports/top-rated", reportHandler.GetTopRatedSongs)
 
 	return mux
 }

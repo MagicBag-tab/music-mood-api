@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"music-mood-api/internal/models"
 	"music-mood-api/internal/services"
@@ -19,18 +18,8 @@ func NewRatingHandler(service *services.RatingService) *RatingHandler {
 	return &RatingHandler{service: service}
 }
 
-func extractSongID(r *http.Request) (int, error) {
-	parts := strings.Split(r.URL.Path, "/")
-	for i, p := range parts {
-		if p == "songs" && i+1 < len(parts) {
-			return strconv.Atoi(parts[i+1])
-		}
-	}
-	return 0, strconv.ErrSyntax
-}
-
 func (h *RatingHandler) Create(w http.ResponseWriter, r *http.Request) {
-	songID, err := extractSongID(r)
+	songID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid song ID")
 		return
@@ -55,7 +44,7 @@ func (h *RatingHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RatingHandler) GetBySongID(w http.ResponseWriter, r *http.Request) {
-	songID, err := extractSongID(r)
+	songID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid song ID")
 		return

@@ -5,6 +5,7 @@ import (
 	"music-mood-api/internal/models"
 	"music-mood-api/pkg/errors"
 	"net/http"
+	"strconv"
 )
 
 type AlbumService interface {
@@ -33,9 +34,9 @@ func (h *AlbumHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/albums/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid ID")
+		writeError(w, http.StatusBadRequest, "invalid album ID")
 		return
 	}
 	album, err := h.service.GetByID(id)
@@ -69,9 +70,9 @@ func (h *AlbumHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/albums/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid ID")
+		writeError(w, http.StatusBadRequest, "invalid album ID")
 		return
 	}
 	var req models.AlbumRequest
@@ -85,9 +86,9 @@ func (h *AlbumHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := extractID(r, "/albums/")
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid ID")
+		writeError(w, http.StatusBadRequest, "invalid album ID")
 		return
 	}
 	if err := h.service.Delete(id); err != nil {
