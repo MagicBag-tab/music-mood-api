@@ -125,13 +125,17 @@ func (r *SongRepository) Create(song models.SongRequest) (*models.Song, error) {
 func (r *SongRepository) GetByID(id int) (*models.Song, error) {
 	var s models.Song
 	err := r.db.QueryRow(`
-		SELECT id, artist_id, album_id, title, mood, source,
-		       spotify_id, image_path, created_at, updated_at
-		FROM songs WHERE id = $1`, id,
+		SELECT s.id, s.artist_id, s.album_id, s.title, s.mood, s.source,
+		       s.spotify_id, s.image_path, s.created_at, s.updated_at,
+		       a.name as artist_name
+		FROM songs s
+		JOIN artists a ON s.artist_id = a.id
+		WHERE s.id = $1`, id,
 	).Scan(
 		&s.ID, &s.ArtistID, &s.AlbumID, &s.Title,
 		&s.Mood, &s.Source, &s.SpotifyID,
 		&s.ImagePath, &s.CreatedAt, &s.UpdatedAt,
+		&s.ArtistName,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
