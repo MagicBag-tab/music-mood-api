@@ -27,8 +27,11 @@ func NewAlbumHandler(service AlbumService) *AlbumHandler {
 func (h *AlbumHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	albums, err := h.service.GetAll()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
+	}
+	if albums == nil {
+		albums = []models.Album{}
 	}
 	writeJSON(w, http.StatusOK, albums)
 }
@@ -45,7 +48,7 @@ func (h *AlbumHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, appErr.Code, appErr.Message)
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	writeJSON(w, http.StatusOK, album)
@@ -63,7 +66,7 @@ func (h *AlbumHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, appErr.Code, appErr.Message)
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	writeJSON(w, http.StatusCreated, album)
@@ -76,10 +79,17 @@ func (h *AlbumHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req models.AlbumRequest
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
 	album, err := h.service.Update(id, req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		if appErr, ok := err.(*errors.AppError); ok {
+			writeError(w, appErr.Code, appErr.Message)
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	writeJSON(w, http.StatusOK, album)
@@ -92,7 +102,11 @@ func (h *AlbumHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.service.Delete(id); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		if appErr, ok := err.(*errors.AppError); ok {
+			writeError(w, appErr.Code, appErr.Message)
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	writeJSON(w, http.StatusNoContent, nil)

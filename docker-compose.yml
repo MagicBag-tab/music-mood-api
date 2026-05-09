@@ -26,8 +26,8 @@ services:
     ports:
       - "8009:8009"
     volumes:
-      db_data:
-        - uploads_data:/app/uploads
+      - ./backend:/app
+      - uploads_data:/app/uploads
 
 
 volumes:
