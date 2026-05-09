@@ -7,8 +7,8 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./db/ddl_music_tracker.sql:/docker-entrypoint-initdb.d/ddl_music_tracker.sql
-      - ./db/dml_music_tracker.sql:/docker-entrypoint-initdb.d/dml_music_tracker.sql
+      - ./db/ddl_music_tracker.sql:/docker-entrypoint-initdb.d/01_ddl.sql
+      - ./db/dml_music_tracker.sql:/docker-entrypoint-initdb.d/02_dml.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -26,7 +26,6 @@ services:
     ports:
       - "8009:8009"
     volumes:
-      - ./backend:/app
       - uploads_data:/app/uploads
 
 
