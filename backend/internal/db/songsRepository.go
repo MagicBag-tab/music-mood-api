@@ -101,7 +101,7 @@ func (r *SongRepository) GetAll(f models.SongFilters) ([]models.Song, int, error
 func (r *SongRepository) Create(song models.SongRequest) (*models.Song, error) {
 	query := `
 		INSERT INTO songs (artist_id, album_id, title, mood, source, spotify_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''))
 		RETURNING id, artist_id, album_id, title, mood, source, 
 		          spotify_id, image_path, created_at, updated_at
 	`
@@ -151,7 +151,7 @@ func (r *SongRepository) Update(id int, req models.SongRequest) (*models.Song, e
 			title      = $3,
 			mood       = $4,
 			source     = $5,
-			spotify_id = $6,
+			spotify_id = NULLIF($6, ''),
 			updated_at = NOW()
 		WHERE id = $7
 		RETURNING id, artist_id, album_id, title, mood, source,
